@@ -8,6 +8,11 @@ class Car():
         self.rast += t * self.speed
         return self.rast
 
+def chto_to(to_to=None):
+    return to_to
+
+print(chto_to(6))
+
 print('Drive')
 
 a = Car('маша', 100)
@@ -17,5 +22,3 @@ c = Car('яна', 80)
 print(a.name, a.drive(5))
 print(b.name, b.drive(3))
 print(c.name, c.drive(10))
-
-
