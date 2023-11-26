@@ -8,6 +8,7 @@ class Car():
         self.rast += t * self.speed
         return self.rast
 
+print('Drive')
 
 a = Car('маша', 100)
 b = Car('злата', 80)
