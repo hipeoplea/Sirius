@@ -9,7 +9,7 @@ class State:
         self.jd = jd
 
     def get_r(self):
-        return str(self.rx) + " " + str(self.ry) + " " + str(self.rz)
+        return self.rx,self.ry,self.rz
 
     def get_v(self):
-        return str(self.vx) + " " + str(self.vy) + " " + str(self.vz)
+        return self.vx,str(self.vy),str(self.vz)

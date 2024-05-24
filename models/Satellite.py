@@ -1,19 +1,19 @@
 import datetime
-
-from models.tle import Tle
-from models.state import State
-from astropy.time import Time
-from models.KeplerianElements import KeplerianElements
 from datetime import datetime
-from sgp4.api import jday, Satrec
+
 from astropy import units as u
-from astropy.coordinates import CartesianRepresentation, CartesianDifferential
+from astropy.time import Time
 from poliastro.bodies import Earth
 from poliastro.twobody import Orbit
+from sgp4.api import jday, Satrec
+
+from models.KeplerianElements import KeplerianElements
+from models.state import State
+from models.tle import Tle
 
 
 class Satellite:
-    def __init__(self, line1, line2):
+    def __init__(self, line1, line2, id=None, r=None, v=None, date=None):
         self.__tle = Tle(line1, line2)
         self.__id = self.__tle.get_id()
         date = self.__getDate()
@@ -23,6 +23,10 @@ class Satellite:
         self.__kep = kep[1]
         self.__realDate = [self.__tle.get_epochYear(), self.__tle.get_epochTime()]
         self.__exchangedDate = date
+
+    # def __init__(self, id, r, v, date):
+    #     epoch = Time(date, scale="utc")
+    #     orbit = Orbit.from_vectors(Earth, r, v, epoch)
 
     def __getDate(self):
         now = datetime.utcnow()
@@ -51,10 +55,28 @@ class Satellite:
 
         orbit = Orbit.from_vectors(Earth, r, v)
 
-        kep = KeplerianElements(orbit.a, orbit.ecc, orbit.inc, orbit.raan, orbit.argp, orbit.nu)
+        kep = KeplerianElements(orbit.a, orbit.ecc, orbit.inc, orbit.raan, orbit.argp, orbit.nu, orbit.r_a, orbit.r_p)
         return [state, kep]
 
-    def __str__(self):
+    def get_tle(self):
+        return self.__tle
+
+    def get_id(self):
+        return self.__id
+
+    def get_state(self):
+        return self.__state
+
+    def get_kep(self):
+        return self.__kep
+
+    def get_real_date(self):
+        return self.__realDate
+
+    def get_exchanged_date(self):
+        return self.__exchangedDate
+
+    def to_string(self):
         kep = self.__kep
         state = self.__state
 
@@ -71,3 +93,6 @@ class Satellite:
                 f"  RA of ascending node (Ω): {kep.raan.to(u.deg)}\n"
                 f"  Argument of perigee (ω): {kep.argp.to(u.deg)}\n"
                 f"  True anomaly (ν): {kep.nu.to(u.deg)}")
+
+    def __str__(self):
+        return str(self.__id)
