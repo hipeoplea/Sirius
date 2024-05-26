@@ -7,7 +7,7 @@ import math
 from models.Satellite import Satellite
 
 
-def selection(x: Satellite, n: List[Satellite]):
+def selection(x: Satellite, n: List[Satellite], p=3600):
     answer = []
     k = 0
     for i in n:
@@ -16,10 +16,9 @@ def selection(x: Satellite, n: List[Satellite]):
         if i.get_kep().r_a.value - x.get_kep().r_p.value < 100:
             k += 1
             n = secondStep(i, x)
-            p = integrate(x, i)
-            if p != 0:
-                answer.append([p[0], p[1].get_id()])
-    print(k)
+            c = integrate(x, i, p)
+            if c != 0:
+                answer.append([c[0], c[1].get_id()])
     return answer
 
 
@@ -79,8 +78,8 @@ def get_points(i_ka, i_ko, gamma, ap1, ap2, a1, a2):
         return []
 
 
-def integrate(x: Satellite, y: Satellite, p=None):
-    t_span = (0, 3600)
+def integrate(x: Satellite, y: Satellite, p=3600):
+    t_span = (0, p)
     time_step = 20
     t_eval = np.arange(0, 3600, time_step)
     initial_state1 = np.hstack((x.get_state().get_r(), x.get_state().get_v()))
@@ -91,12 +90,13 @@ def integrate(x: Satellite, y: Satellite, p=None):
     positions2 = solution2.y[:3].T
     for i in range(180):
         r1r2 = math.sqrt((positions1[i][0] - positions2[i][0]) ** 2 + (positions1[i][1] - positions2[i][1]) ** 2 + (
-                    positions1[i][2] - positions2[i][2]) ** 2)
+                positions1[i][2] - positions2[i][2]) ** 2)
         if r1r2 < 100:
-#51178
+            # 51178
             return [r1r2, y]
 
     return 0
+
 
 def orbital_dynamics(t, y):
     r = np.linalg.norm(y[:3])

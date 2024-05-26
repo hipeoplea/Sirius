@@ -26,6 +26,8 @@ class Tle:
         self.__epochRev = line2[63:68]
         self.__chk = line2[68]
         self.__id = int(self.get_satelliteNumbers1().replace(" ", ""))
+        self.line1 = line1
+        self.line2 = line2
 
     def get_numberOfLine1(self):
         return self.__numberOfLine1

@@ -13,7 +13,7 @@ from models.tle import Tle
 
 
 class Satellite:
-    def __init__(self, line1, line2, id=None, r=None, v=None, date=None):
+    def __init__(self, line1, line2):
         self.__tle = Tle(line1, line2)
         self.__id = self.__tle.get_id()
         date = self.__getDate()

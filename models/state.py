@@ -12,4 +12,4 @@ class State:
         return self.rx,self.ry,self.rz
 
     def get_v(self):
-        return self.vx,str(self.vy),str(self.vz)
+        return self.vx,self.vy,self.vz

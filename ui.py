@@ -4,7 +4,12 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTa
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtCore import Qt, QPoint
-from data.star import satellite
+from data.star import satellite, fromRVtoTLE
+from astropy.time import Time
+from astropy import units as u
+import numpy as np
+from models.Satellite import Satellite
+from calculation.checkSats import selection
 
 
 class MyApp(QWidget):
@@ -135,45 +140,32 @@ class MyApp(QWidget):
 
         # Добавление спутников
         add_layout = QVBoxLayout()
-        grid = QGridLayout()
 
-        add_id_input = QLineEdit()
         add_button = QPushButton('Добавить')
-        r_inputs = [QLineEdit() for _ in range(3)]
-        v_inputs = [QLineEdit() for _ in range(3)]
-        time_input = QDateTimeEdit()
-        time_input.setDateTime(QDateTime.currentDateTime())
-        time_input.setCalendarPopup(True)
+        add_button.clicked.connect(self.createSat)
+        self.line1inputs = QLineEdit()
+        self.line2inputs = QLineEdit()
 
-        grid.addWidget(QLabel('ID:'), 0, 0)
-        grid.addWidget(add_id_input, 0, 1)
-        grid.addWidget(add_button, 5, 0)
-
-        for i in range(3):
-            grid.addWidget(QLabel(f'R{i + 1}:'), i + 1, 0)
-            grid.addWidget(r_inputs[i], i + 1, 1)
-            grid.addWidget(QLabel(f'V{i + 1}:'), i + 1, 2)
-            grid.addWidget(v_inputs[i], i + 1, 3)
-
-        grid.addWidget(QLabel('Время:'), 4, 0)
-        grid.addWidget(time_input, 4, 1)
-
-        add_layout.addLayout(grid)
+        add_layout.addWidget(QLabel(f'1line'))
+        add_layout.addWidget(self.line1inputs)
+        add_layout.addWidget(QLabel('2line'))
+        add_layout.addWidget(self.line2inputs)
+        add_layout.addWidget(add_button)
 
         # Удаление
         remove_layout = QVBoxLayout()
-        remove_id_input = QLineEdit()
+        self.remove_id_input = QLineEdit()
         remove_button = QPushButton('Удалить')
+        remove_button.clicked.connect(self.remove)
         self.remove_results = QTextEdit()
         self.remove_results.setReadOnly(True)
         self.remove_results.setStyleSheet("QTextEdit { background-color: #FFFFFF; }")  # Поле для вывода результатов
 
         remove_layout.addWidget(QLabel('ID:'))
-        remove_layout.addWidget(remove_id_input)
+        remove_layout.addWidget(self.remove_id_input)
         remove_layout.addWidget(remove_button)
         remove_layout.addWidget(self.remove_results)
 
-        # Add frames to visually separate sections
         check_frame = QFrame()
         check_frame.setFrameShape(QFrame.HLine)
         check_frame.setFrameShadow(QFrame.Sunken)
@@ -182,7 +174,6 @@ class MyApp(QWidget):
         add_frame.setFrameShape(QFrame.HLine)
         add_frame.setFrameShadow(QFrame.Sunken)
 
-        # Add sections to the main layout
         layout.addLayout(check_layout)
         layout.addWidget(check_frame)
         layout.addLayout(add_layout)
@@ -191,24 +182,74 @@ class MyApp(QWidget):
 
         self.tab_modify.setLayout(layout)
 
-    def checkSat(self):
-        id = self.check_id_input.text()
-        flag = 0
-        if id.isdigit() and len(id) == 5:
+    def check_id(self, id):
+        if str(id).isdigit() and len(str(id)) == 5:
             for sat in satellite:
                 if sat.get_id() == int(id):
-                    self.remove_results.append('-----------------')
-                    self.remove_results.append(str(sat) + " " + "Уже существует")
-                    self.remove_results.append('-----------------')
-                    flag = 1
-                    break
-            if flag == 0:
+                    return 1
+            return 2
+        else:
+            return 0
+
+    def checkSat(self):
+        id = self.check_id_input.text()
+        n = self.check_id(id)
+        if n == 1:
+            self.remove_results.append('-----------------')
+            self.remove_results.append(id + " " + "Уже существует")
+            self.remove_results.append('-----------------')
+
+        if n == 2:
+            self.remove_results.append('-----------------')
+            self.remove_results.append(f"Id ({id}) cвободно")
+            self.remove_results.append('-----------------')
+        if n == 0:
+            self.remove_results.append('-----------------')
+            self.remove_results.append(f"ID некорректен ({id})")
+            self.remove_results.append('-----------------')
+
+    def is_numeric(self, s):
+        s = s.replace('.', '', 1)
+        s = s.replace('-', '', 1)
+        return s.isdigit()
+
+    def createSat(self):
+        line1 = self.line1inputs.text().strip()
+        line2 = self.line2inputs.text().strip()
+
+        try:
+            sat = Satellite(line1, line2)
+            id = sat.get_id()
+            if self.check_id(id) == 2:
+                satellite.append(sat)
                 self.remove_results.append('-----------------')
-                self.remove_results.append(f"Id ({id}) cвободно")
+                self.remove_results.append(f'Спутник {id} добавлен в коллекцию')
+                self.remove_results.append('-----------------')
+            else:
+                self.remove_results.append('-----------------')
+                self.remove_results.append(f'Спутник {id} уже существует')
+                self.remove_results.append('-----------------')
+        except Exception as e:
+            print(e)
+            self.remove_results.append('Некорректные TLE данные')
+
+    def remove(self):
+        id = self.remove_id_input.text()
+        if str(id).isdigit() and len(str(id)) == 5:
+            for sat in satellite:
+                if sat.get_id() == int(id):
+                    satellite.remove(sat)
+                    self.remove_results.append('-----------------')
+                    self.remove_results.append(f'Спутник {id} удален')
+                    self.remove_results.append('-----------------')
+                    break
+            else:
+                self.remove_results.append('-----------------')
+                self.remove_results.append(f'Спутник {id} не найден')
                 self.remove_results.append('-----------------')
         else:
             self.remove_results.append('-----------------')
-            self.remove_results.append(f"ID некорректен ({id})")
+            self.remove_results.append(f'Некорректный ид')
             self.remove_results.append('-----------------')
 
     def create_collisions_tab(self):
@@ -228,7 +269,47 @@ class MyApp(QWidget):
         layout.addWidget(self.start_button)
         layout.addWidget(self.collision_results)
 
+        self.start_button.clicked.connect(self.collision)
+
         self.tab_collisions.setLayout(layout)
+
+    def collision(self):
+        id = self.collision_id_input.text()
+        p = self.time_interval_input.text()
+        n = self.check_id(id)
+        if n == 1:
+            for sat in satellite:
+                if sat.get_id() == int(id):
+                    if p == "":
+                        n = selection(sat, satellite)
+                        if not n:
+                            self.collision_results.append('-----------------')
+                            self.collision_results.append(
+                                f"Опасных сближений спутника {id} не обнаружено на промежутке времени 3600сек")
+                            self.collision_results.append('-----------------')
+                        else:
+                            for k in n:
+                                self.collision_results.append('-----------------')
+                                self.collision_results.append(
+                                    f"Обнаружено сближение спутника {id} со спутником {k[1]} на расстояние {k[0]}км в течении 3600сек")
+                                self.collision_results.append('-----------------')
+                    elif p.isdigit():
+                        n = selection(sat, satellite, p=int(p))
+                        if not n:
+                            self.collision_results.append('-----------------')
+                            self.collision_results.append(
+                                f"Опасных сближений спутника {id} не обнаружено на промежутке времени {p}сек ")
+                            self.collision_results.append('-----------------')
+                        else:
+                            for k in n:
+                                self.collision_results.append('-----------------')
+                                self.collision_results.append(
+                                    f"Обнаружено сближение спутника {id} со спутником {k[1]} на расстояние {k[0]}км в течении {p}сек")
+                                self.collision_results.append('-----------------')
+        else:
+            self.collision_results.append('-----------------')
+            self.collision_results.append(f"ID некорректен ({id})")
+            self.collision_results.append('-----------------')
 
     def apply_styles(self):
         # Define the colors
